@@ -308,6 +308,16 @@ public class AiReviewConstants {
      */
     public static final String LANG_DEFAULT = "default";
 
+    public static final String MODEL = "model";
+    public static final String ROLE = "role";
+    public static final String CONTENT = "content";
+    public static final String CHOICES = "choices";
+    public static final String MESSAGES = "messages";
+    public static final String MESSAGE = "message";
+    public static final String TEMPERATURE = "temperature";
+    public static final String APPLICATION_JSON = "application/json";
+
+
     // ============================
     // 数字常量
     // ============================

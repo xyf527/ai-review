@@ -1,0 +1,18 @@
+llm:
+  provider: deepseek   # 可选: openai, deepseek, qwen, glm
+  openai:
+    api-key: ${OPENAI_API_KEY}
+    base-url: https://api.openai.com/v1
+    model: gpt-3.5-turbo
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY}
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+  qwen:
+    api-key: ${QWEN_API_KEY}
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model: qwen-turbo
+  glm:
+    api-key: ${GLM_API_KEY}
+    base-url: https://open.bigmodel.cn
+    model: glm-4.7-flash
