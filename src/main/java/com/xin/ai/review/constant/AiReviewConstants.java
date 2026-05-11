@@ -46,6 +46,9 @@ public final class AiReviewConstants {
     public static final String SOURCE_BRANCH = "source_branch";
     public static final String TARGET_BRANCH = "target_branch";
     public static final String BRANCH = "branch";
+    public static final String URL = "url";
+    public static final String WEB_URL = "web_url";
+    public static final String COMMITS_URL = "commits_url";
     public static final int ZERO = 0;
     public static final String MODEL = "model";
     public static final String ROLE = "role";
@@ -53,8 +56,45 @@ public final class AiReviewConstants {
     public static final String CHOICES = "choices";
     public static final String MESSAGES = "messages";
     public static final String MESSAGE = "message";
+    public static final String ACTION = "action";
+    public static final String PROJECT = "project";
+    public static final String NAME = "name";
+    public static final String USERNAME = "username";
+    public static final String USER_NAME = "user_name";
+    public static final String REF = "ref";
+    public static final String BASE = "base";
+    public static final String PUSHER = "pusher";
+    public static final String HTML_URL = "html_url";
+    public static final String USER = "user";
+    public static final String SENDER = "sender";
+    public static final String LOGIN = "login";
+    public static final String HEAD = "head";
+    public static final String LABEL = "label";
+    public static final String ID = "id";
+    public static final String BODY = "body";
+    public static final String NOTE = "note";
+    public static final String NEW_PATH = "new_path";
+    public static final String CHANGES = "changes";
+    public static final String COMPARE_URL = "compare_url";
+    public static final String IID = "iid";
+    public static final String PROJECT_ID = "project_id";
+    public static final String COMMITS = "commits";
+    public static final String COMMIT = "commit";
+    public static final String HEAD_COMMIT = "head_commit";
+    public static final String COMPARE = "compare";
+    public static final String ADDED = "added";
+    public static final String MODIFIED = "modified";
+    public static final String PULL_REQUEST = "pull_request";
+    public static final String REPOSITORY = "repository";
+    public static final String FULL_NAME = "full_name";
+    public static final String FILENAME = "filename";
+    public static final String PATCH = "patch";
+    public static final String NUMBER = "number";
+    public static final String FILES = "files";
+    public static final String TITLE = "title";
     public static final String TEMPERATURE = "temperature";
     public static final String APPLICATION_JSON = "application/json";
+    public static final String OBJECT_ATTRIBUTES = "object_attributes";
 
     // ============================
     // HTTP 认证前缀

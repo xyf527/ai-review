@@ -53,7 +53,7 @@ public class PushReviewLog {
 
     @Column(name = "additions")
     @Builder.Default
-    private String additions;
+    private Integer additions = 0;
 
     @Column(name = "deletions")
     @Builder.Default
