@@ -242,7 +242,7 @@ public class GitHubWebhookHandler {
             return "";
         }
         String s = url.replaceAll("^https?://", "");
-        s = s.replaceAll("[a-zA-Z0-9]", "_");
+        s = s.replaceAll("[^a-zA-Z0-9]", "_");
         s = s.replaceAll("_+$", "");
         return s;
     }
