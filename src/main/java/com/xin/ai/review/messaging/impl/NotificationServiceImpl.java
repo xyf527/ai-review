@@ -3,6 +3,7 @@ package com.xin.ai.review.messaging.impl;
 import com.xin.ai.review.constant.AiReviewConstants;
 import com.xin.ai.review.messaging.NotificationService;
 import com.xin.ai.review.notifier.DingTalkNotifier;
+import com.xin.ai.review.notifier.ExtraWebhookNotifier;
 import com.xin.ai.review.notifier.FeishuNotifier;
 import com.xin.ai.review.notifier.WeComNotifier;
 import lombok.extern.slf4j.Slf4j;
