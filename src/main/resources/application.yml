@@ -55,8 +55,8 @@ review:
   supported-extensions: ${SUPPORTED_EXTENSIONS:.java,.py,.php,.yml,.vue,.go,.c,.cpp,.h,.js,.css,.md,.sql,.ts,.tsx,.jsx}
   style: ${REVIEW_STYLE:professional}
   max-tokens: ${REVIEW_MAX_TOKENS:10000}
-  push-enabled: ${PUSH_REVIEW_ENABLED:false}
-  only-protected-branches: ${MERGE_REVIEW_ONLY_PROTECTED_BRANCHES_ENABLED:false}
+  push-enabled: ${PUSH_REVIEW_ENABLED:true}
+  only-protected-branches: ${MERGE_REVIEW_ONLY_PROTECTED_BRANCHES_ENABLED:true}
   only-branch-name: ${MERGE_REVIEW_ONLY_BRANCH_NAME:}
 
 # Notification Configuration
@@ -68,7 +68,7 @@ notification:
     enabled: ${WECOM_ENABLED:false}
     webhook-url: ${WECOM_BOT_WEBHOOK_URL:}
   feishu:
-    enabled: ${FEISHU_ENABLED:false}
+    enabled: ${FEISHU_ENABLED:true}
     webhook-url: ${FEISHU_WEBHOOK_URL:}
   extra-webhook:
     enabled: ${EXTRA_WEBHOOK_ENABLED:false}

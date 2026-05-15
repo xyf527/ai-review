@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.xin.ai.review.constant.AiReviewConstants;
 import com.xin.ai.review.entity.MrReviewLog;
+import com.xin.ai.review.entity.PushReviewLog;
 import com.xin.ai.review.messaging.NotificationService;
 import com.xin.ai.review.service.CodeReviewService;
 import com.xin.ai.review.service.ReviewService;
@@ -277,6 +278,174 @@ public class GiteaWebhookHandler {
             log.error("Failed to create or get Gitea review issue: {}", e.getMessage(), e);
         }
         return -1;
+    }
+
+
+    @Async
+    public void handlePush(JsonNode payload, String giteaToken, String giteaUrl) {
+        try {
+            log.info("Processing Gitea Push webhook");
+
+            String projectName = payload.path(AiReviewConstants.REPOSITORY).path(AiReviewConstants.NAME).asText();
+            String repoFullName = payload.path(AiReviewConstants.REPOSITORY).path(AiReviewConstants.FULL_NAME).asText();
+            String author = payload.path(AiReviewConstants.PUSHER).path(AiReviewConstants.LOGIN).asText();
+            if (author == null || author.isBlank()) {
+                author = payload.path(AiReviewConstants.SENDER).path(AiReviewConstants.LOGIN).asText();
+            }
+            String ref = payload.path(AiReviewConstants.REF).asText();
+            String branch = ref.replace(AiReviewConstants.GIT_REFS_HEADS_PREFIX, "");
+            long updatedAt = System.currentTimeMillis() / 1000;
+            JsonNode commits = payload.path(AiReviewConstants.COMMITS);
+
+            // 提取 push 链接：优先使用 compare_url（变更对比页），fallback 到第一个 commit URL
+            String pushUrl = payload.path(AiReviewConstants.COMPARE_URL).asText(null);
+            if (pushUrl == null || pushUrl.isBlank()) {
+                pushUrl = payload.path(AiReviewConstants.COMPARE).asText(null);
+            }
+            if ((pushUrl == null || pushUrl.isBlank()) && commits.isArray() && commits.size() > 0) {
+                pushUrl = commits.get(0).path(AiReviewConstants.URL).asText(null);
+            }
+            pushUrl = normalizeUrl(pushUrl, giteaUrl);
+
+            StringBuilder commitsBuilder = new StringBuilder();
+            for (JsonNode commit : commits) {
+                commitsBuilder.append(commit.path(AiReviewConstants.MESSAGE).asText()).append("\n");
+            }
+            String commitsText = commitsBuilder.toString();
+
+            String reviewResult = null;
+            int score = 0;
+            int[] additions = {0};
+            int[] deletions = {0};
+
+            if (pushReviewEnabled) {
+                StringBuilder changesBuilder = new StringBuilder();
+                for (JsonNode commit : commits) {
+                    String commitId = commit.path(AiReviewConstants.ID).asText();
+                    String commitChanges = fetchCommitChanges(giteaUrl, giteaToken, repoFullName, commitId);
+                    if (commitChanges != null) {
+                        changesBuilder.append(commitChanges).append("\n");
+                    }
+                }
+
+                String changesText = changesBuilder.toString();
+                if (changesText.isBlank()) {
+                    log.info("No supported changes found in Gitea push");
+                    reviewResult = AiReviewConstants.MSG_NO_WATCHED_FILES_CHANGED;
+                } else {
+                    log.info("Starting AI review for Gitea push: {}/{}", projectName, branch);
+                    reviewResult = codeReviewService.reviewAndStripCode(changesText, commitsText);
+                    score = codeReviewService.parseReviewScore(reviewResult);
+
+                    // 发布评论（到最新commit）
+                    if (!commits.isEmpty()) {
+                        String latestCommitId = commits.get(0).path(AiReviewConstants.ID).asText();
+                        String commitShort = latestCommitId.length() >= 7 ? latestCommitId.substring(0, 7) : latestCommitId;
+                        if (useIssueMode) {
+                            String issueTitle = AiReviewConstants.GITEA_REVIEW_ISSUE_TITLE_PREFIX + repoFullName + "@" + branch + ":" + commitShort;
+                            int issueNumber = createOrGetReviewIssue(giteaUrl, giteaToken, repoFullName, issueTitle);
+                            if (issueNumber > 0) {
+                                addIssueComment(giteaUrl, giteaToken, repoFullName, issueNumber, reviewResult);
+                            } else {
+                                postCommitComment(giteaUrl, giteaToken, repoFullName, latestCommitId, reviewResult);
+                            }
+                        } else {
+                            postCommitComment(giteaUrl, giteaToken, repoFullName, latestCommitId, reviewResult);
+                        }
+                    }
+
+                    calculateChanges(changesText, additions, deletions);
+                }
+            }
+
+            // 保存到数据库（无论是否开启push review，都记录push事件）
+            PushReviewLog pushLog = PushReviewLog.builder()
+                    .projectName(projectName)
+                    .author(author)
+                    .branch(branch)
+                    .updatedAt(updatedAt)
+                    .commitMessages(commitsText)
+                    .score(score)
+                    .url(pushUrl)
+                    .reviewResult(reviewResult)
+                    .additions(additions[0])
+                    .deletions(deletions[0])
+                    .build();
+            reviewService.insertPushReviewLog(pushLog);
+
+            // 发送通知（仅当有审查结果时）
+            if (reviewResult != null && !reviewResult.isBlank()) {
+                notificationService.sendReviewNotification(
+                        projectName, author, AiReviewConstants.REVIEW_TYPE_PUSH, branch, null, reviewResult, score, null,
+                        slugifyUrl(giteaUrl), null);
+            }
+
+        } catch (Exception e) {
+            log.error("Error handling Gitea push webhook: {}", e.getMessage(), e);
+            notificationService.sendErrorNotification(AiReviewConstants.MSG_ERROR_SERVICE_PREFIX + e.getMessage());
+        }
+    }
+
+    private void postCommitComment(String giteaUrl, String token, String repoFullName, String commitId, String comment) {
+        try {
+            String url = giteaUrl.replaceAll("/+$", "") + AiReviewConstants.GITEA_API_REPOS_PATH + repoFullName + "/git/commits/" + commitId + "/notes";
+            ObjectNode body = objectMapper.createObjectNode();
+            body.put(AiReviewConstants.MESSAGE, comment);
+
+            RequestBody requestBody = RequestBody.create(
+                    objectMapper.writeValueAsString(body),
+                    MediaType.parse(AiReviewConstants.MEDIA_TYPE_JSON)
+            );
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader(AiReviewConstants.HEADER_AUTHORIZATION, AiReviewConstants.AUTH_TOKEN_PREFIX + token)
+                    .post(requestBody)
+                    .build();
+
+            try (Response response = httpClient.newCall(request).execute()) {
+                log.info("Posted Gitea commit comment: {}", response.code());
+            }
+        } catch (Exception e) {
+            log.error("Failed to post Gitea commit comment: {}", e.getMessage(), e);
+        }
+    }
+
+
+    private String fetchCommitChanges(String giteaUrl, String token, String repoFullName, String commitId) throws IOException {
+        String url = giteaUrl.replaceAll("/+$", "") + AiReviewConstants.GITEA_API_REPOS_PATH + repoFullName + "/git/commits/" + commitId;
+        Set<String> supported = getSupportedExtensions();
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader(AiReviewConstants.HEADER_AUTHORIZATION, AiReviewConstants.AUTH_TOKEN_PREFIX + token)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return null;
+            }
+            String body = response.body() != null ? response.body().string() : "";
+            JsonNode json = objectMapper.readTree(body);
+
+            StringBuilder sb = new StringBuilder();
+            JsonNode files = json.path(AiReviewConstants.FILES);
+            for (JsonNode file : files) {
+                String filename = file.path(AiReviewConstants.FILENAME).asText();
+                String ext = getExtension(filename);
+                if (!supported.contains(ext)) {
+                    continue;
+                }
+
+                String patch = file.path(AiReviewConstants.PATCH).asText("");
+                if (!patch.isBlank()) {
+                    sb.append("diff --git a/").append(filename).append(" b/").append(filename).append("\n");
+                    sb.append("+++ b/").append(filename).append("\n");
+                    sb.append(patch).append("\n");
+                }
+            }
+            return sb.toString();
+        }
     }
 
     private String fetchPrFiles(String giteaUrl, String token, String repoFullName, int prNumber) throws IOException {

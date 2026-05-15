@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 @Component
 public class GitLabWebhookHandler {
 
-
     @Autowired
     private CodeReviewService codeReviewService;
 
@@ -254,7 +253,7 @@ public class GitLabWebhookHandler {
     }
 
     private String fetchCommitChanges(String gitlabUrl, String token, int projectId, String commitId) throws IOException {
-        String url = gitlabUrl.replaceAll("/+$", "") + AiReviewConstants.GITLAB_API_PROJECTS_PATH + "/repository/commits/" + commitId + "/diff";
+        String url = gitlabUrl.replaceAll("/+$", "") + AiReviewConstants.GITLAB_API_PROJECTS_PATH + projectId + "/repository/commits/" + commitId + "/diff";
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader(AiReviewConstants.HEADER_GITLAB_PRIVATE_TOKEN, token)
@@ -293,7 +292,7 @@ public class GitLabWebhookHandler {
 
     private void postMrComment(String gitlabUrl, String token, int projectId, int mrIid, String comment) {
         try {
-            String url = gitlabUrl.replaceAll("/+$", "") + AiReviewConstants.GITLAB_API_PROJECTS_PATH + projectId + "/merge_requests" + mrIid + "/notes";
+            String url = gitlabUrl.replaceAll("/+$", "") + AiReviewConstants.GITLAB_API_PROJECTS_PATH + projectId + "/merge_requests/" + mrIid + "/notes";
             ObjectNode body = objectMapper.createObjectNode();
             body.put(AiReviewConstants.BODY, comment);
 

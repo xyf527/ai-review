@@ -47,10 +47,10 @@ public class GitHubWebhookHandler {
     @Value("${review.supported-extensions:.java,.py,.php,.yml,.vue,.go,.c,.cpp,.h,.js,.css,.md,.sql,.ts,.tsx,.jsx}")
     private String supportedExtensions;
 
-    @Value("${review.push-enabled:false}")
+    @Value("${review.push-enabled:true}")
     private boolean pushReviewEnabled;
 
-    @Value("${review.only-protected-branches:false}")
+    @Value("${review.only-protected-branches:true}")
     private boolean onlyProtectedBranches;
 
     @Value("${review.only-branch-name:}")
