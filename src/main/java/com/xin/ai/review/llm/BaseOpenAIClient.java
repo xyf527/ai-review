@@ -34,7 +34,7 @@ public abstract class BaseOpenAIClient implements LLMClient{
     protected final OkHttpClient httpClient;
     protected final ObjectMapper objectMapper;
 
-    protected BaseOpenAIClient(String apiKey, String baseUrl, String model, String provider) {
+    protected BaseOpenAIClient(String apiKey, String baseUrl, String provider, String model) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
         this.model = model;
@@ -45,7 +45,7 @@ public abstract class BaseOpenAIClient implements LLMClient{
                 .connectTimeout(60, TimeUnit.SECONDS)
                 // 大模型生成内容可能慢 尤其代码量大时
                 // 长连接处理 LLM生成代码属于长耗时任务 默认10s会导致大量Timeout异常
-                .readTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
                 // 忽略证书 生产环境谨慎
                 .hostnameVerifier((hostname, session) -> true)
@@ -111,7 +111,7 @@ public abstract class BaseOpenAIClient implements LLMClient{
                 String content = responseJson
                         .path(AiReviewConstants.CHOICES)
                         .path(0)
-                        .path(AiReviewConstants.MESSAGES)
+                        .path(AiReviewConstants.MESSAGE)
                         .path(AiReviewConstants.CONTENT)
                         .asText();
 
