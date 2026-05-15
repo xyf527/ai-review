@@ -104,7 +104,7 @@ public class FeishuNotifier {
             // body
             ObjectNode body = objectMapper.createObjectNode();
             body.put("direction", "vertical");
-            body.put("padding", "12px 12px 12px 12px 12px");
+            body.put("padding", "12px 12px 12px 12px");
             ArrayNode elements = objectMapper.createArrayNode();
             ObjectNode markdownElement = objectMapper.createObjectNode();
             markdownElement.put("tag", "markdown");
