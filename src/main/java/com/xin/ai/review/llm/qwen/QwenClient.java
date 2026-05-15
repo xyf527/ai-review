@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public class QwenClient extends BaseOpenAIClient {
 
     public QwenClient(String apiKey, String baseUrl, String provider, String model) {
-        super(apiKey, baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl, model, provider);
+        super(apiKey, baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl, provider, model);
         log.info("Qwen client initialized, model: {}, baseUrl: {}", model, baseUrl);
     }
 

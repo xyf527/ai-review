@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GlmClient extends BaseOpenAIClient {
 
     public GlmClient(String apiKey, String baseUrl, String provider, String model) {
-        super(apiKey, baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl, model, provider);
+        super(apiKey, baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl, provider, model);
         log.info("GLM client initialized, model: {}, baseUrl: {}", model, baseUrl);
     }
 
