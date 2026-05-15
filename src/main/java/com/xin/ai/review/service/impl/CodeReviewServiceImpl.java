@@ -72,10 +72,6 @@ public class CodeReviewServiceImpl implements CodeReviewService {
         LANG_TO_PROMPT_KEY.put(AiReviewConstants.FILE_EXT_PY, AiReviewConstants.PROMPT_KEY_PYTHON);
     }
 
-    // ... 在类中定义静态常量，避免重复编译正则提升性能
-    private static final Pattern MARKDOWN_CODE_BLOCK_PATTERN =
-            Pattern.compile("(?s)```[\\w]*\\s*(.*?)\\s*```");
-
     @Override
     public String reviewAndStripCode(String changesText, String commitText) {
         // 步骤1 输入验证
@@ -105,13 +101,11 @@ public class CodeReviewServiceImpl implements CodeReviewService {
         result = result.strip();
 
         // 步骤5 清理markdown格式
-        Matcher matcher = MARKDOWN_CODE_BLOCK_PATTERN.matcher(result);
-        if (matcher.find()) {
-            // group(1） 提取的就是匹配到的第一个代码块内容
-            result  = matcher.group(1).strip();
-        } else {
-            // 如果没匹配到代码块 说明AI直接返回了纯文本 直接strip去除空格即可
-            result = result.strip();
+        if (result.startsWith("```markdown") && result.endsWith("```")) {
+            result = result.substring(11, result.length() - 3).strip();
+        } else if (result.startsWith("```") && result.endsWith("```")) {
+            // 处理没有标注语言的通用块包装
+            result = result.substring(3, result.length() - 3).strip();
         }
         return result;
 
